@@ -9,6 +9,8 @@ module.exports = class RPC extends require("events").EventEmitter
         @_pending   = []
         @_requests  = {}
 
+        @_listening = true
+
         if _.isFunction(opts)
             cb = opts
             opts = {}
@@ -21,7 +23,7 @@ module.exports = class RPC extends require("events").EventEmitter
 
         # -- start listening -- #
 
-        @interface.on "message", (msg,handle) =>
+        @_mListener = (msg,handle) =>
             if msg?.type == "_rpc"
                 # it's for us...
 
@@ -33,19 +35,34 @@ module.exports = class RPC extends require("events").EventEmitter
                     # incoming request
                     @_consumeRequest msg, handle
 
-        cb? null
+        @interface.on "message", @_mListener
+
+        cb? null, @
+
+    #----------
+
+    disconnect: ->
+        return true if !@_listening
+        @interface.removeListener "message", @_mListener
+
+    #----------
+
+    reconnect: ->
+        return true if @_listening
+        @interface.on "message", @_mListener
 
     #----------
 
     request: (key,args...,cb) ->
-        msg     = args[0]
-        handle  = args[1]
-
         # generate a UUID for this request
         id = UUID.v4()
 
+        msg     = args[0]
+        handle  = args[1]
+        opts    = args[2]
+
         # push the request
-        @_pending.push id:id, key:key, msg:msg, handle:handle, cb:cb
+        @_pending.push id:id, key:key, msg:msg, handle:handle, opts:opts, cb:cb
         @_runQueue()
 
     #----------
@@ -75,11 +92,11 @@ module.exports = class RPC extends require("events").EventEmitter
                 else
                     if @listeners(msg.key).length > 0
                         # emit
-                        @emit msg.key, msg.msg, msg.handle, cb
+                        @emit msg.key, msg.msg, handle, cb
 
                     else
                         # return error
-                        cb "No listener registered for #{msg.key}."
+                        cb new Error "NO_LISTENER: No listener registered for #{msg.key}."
 
             # TODO: Add timeout to handle case where we emit and get
             # nothing back.
@@ -94,14 +111,18 @@ module.exports = class RPC extends require("events").EventEmitter
         if !request
             return false
 
-        timeout = setTimeout =>
-            # if we fail to get an response inside the timeout time,
-            # consider the request failed and call the callback
-            if @_requests[request.id]
-                process.nextTick =>
-                    @_requests[request.id].callback? "Timeout waiting for RPC response to #{request.key} command."
-                    delete @_requests[request.id]
-        , @_timeout
+        if request.id
+            timeout = setTimeout =>
+                # if we fail to get an response inside the timeout time,
+                # consider the request failed and call the callback
+                if @_requests[request.id]
+                    process.nextTick =>
+                        @_requests[request.id].callback? new Error "TIMEOUT: Timeout waiting for RPC response to #{request.key} command."
+                        delete @_requests[request.id]
+            , request.opts?.timeout || @_timeout
+
+            # create a hash entry to map the response
+            @_requests[ request.id ] = callback:request.cb, timeout:timeout if request.id
 
         # send our request
         @interface.send
@@ -114,9 +135,6 @@ module.exports = class RPC extends require("events").EventEmitter
             err_stack:  request.err_stack
         , request.handle
 
-        # create a hash entry to map the response
-        @_requests[ request.id ] = callback:request.cb, timeout:timeout
-
         @_runQueue()
 
     #----------
@@ -125,7 +143,7 @@ module.exports = class RPC extends require("events").EventEmitter
         h = @_requests[ msg.reply_id ]
 
         if !h
-            console.error "Got unmatched response for #{ msg.properties.correlationId }"
+            @emit "debug", "Got unmatched response for #{ msg.reply_id }. Could be a call that timed out."
             return false
 
         # stop the timeout

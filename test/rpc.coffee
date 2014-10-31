@@ -15,6 +15,10 @@ describe "Function Calls", ->
             throw new Error("Expected first message of OK") if msg != "OK"
             done()
 
+    after (done) ->
+        server.kill()
+        done()
+
     before (done) ->
         rpc = new RPC server, timeout:500, (err) ->
             throw err if err
