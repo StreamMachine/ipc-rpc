@@ -1,11 +1,11 @@
 {
     "name":         "ipc-rpc",
-    "version":      "0.0.1",
+    "version":      "0.1.0",
     "description":  "RPC over process.send",
     "keywords":     ["ipc","rpc"],
-    "homepage":     "http://github.com/StreamMachine/ipc-rpc/",
+    "homepage":     "https://github.com/StreamMachine/ipc-rpc/",
     "author":       {"name": "Eric Richardson", "url": "http://ewr.is"},
-    "repository":   {"type": "git", "url": "http://github.com/StreamMachine/ipc-rpc.git"},
+    "repository":   {"type": "git", "url": "https://github.com/StreamMachine/ipc-rpc.git"},
     "main":         "./index.js",
     "engines": {
         "node": ">=0.10.0"
