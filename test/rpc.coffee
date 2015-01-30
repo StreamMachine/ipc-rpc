@@ -1,4 +1,4 @@
-RPC = $src "rpc"
+RPC = require "../"
 
 cp = require "child_process"
 path = require "path"

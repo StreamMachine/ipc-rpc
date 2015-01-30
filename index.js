@@ -1,3 +1,2 @@
-require("coffee-script")
-RPC = require("./lib/rpc")
+RPC = require("./js/src/rpc")
 module.exports = RPC

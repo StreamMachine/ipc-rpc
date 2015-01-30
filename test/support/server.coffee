@@ -1,4 +1,4 @@
-RPC = require "../../lib/rpc"
+RPC = require "../../"
 _ = require "underscore"
 
 functions =
