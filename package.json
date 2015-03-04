@@ -1,6 +1,6 @@
 {
     "name":         "ipc-rpc",
-    "version":      "0.1.1",
+    "version":      "0.1.2",
     "description":  "RPC over process.send",
     "keywords":     ["ipc","rpc"],
     "homepage":     "https://github.com/StreamMachine/ipc-rpc/",
@@ -12,7 +12,8 @@
     },
     "dependencies": {
         "underscore":     "~1.7.0",
-        "uuid":           "~1.4.1"
+        "uuid":           "~1.4.1",
+        "debug":          "~2.1.2"
     },
     "scripts": {
       "test": "grunt && ./node_modules/.bin/mocha test/",
@@ -20,8 +21,8 @@
     },
     "devDependencies": {
         "coffee-script":        "~1.7.1",
-        "mocha":                "~1.20.1",
-        "chai":                 "~1.9.1",
+        "mocha":                "~2.1.0",
+        "chai":                 "~2.1.0",
         "grunt":                "^0.4.5",
         "grunt-cli":            "^0.1.13",
         "grunt-contrib-coffee": "^0.12.0"

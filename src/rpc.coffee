@@ -1,10 +1,13 @@
 _       = require "underscore"
 UUID    = require "uuid"
+debug   = require("debug")("rpc")
 
 module.exports = class RPC extends require("events").EventEmitter
     constructor: (@interface,opts,cb) ->
         if !@interface?.send?
             throw new Error "Invalid RPC interface. No send function."
+
+        debug "#{process.pid}: Starting up RPC client/server"
 
         @_pending   = []
         @_requests  = {}
@@ -25,6 +28,7 @@ module.exports = class RPC extends require("events").EventEmitter
 
         @_mListener = (msg,handle) =>
             if msg?.type == "_rpc"
+                debug "#{process.pid}: Incoming message of type _rpc", msg, handle?
                 # it's for us...
 
                 if msg.reply_id
@@ -72,6 +76,7 @@ module.exports = class RPC extends require("events").EventEmitter
 
         cb = _.once (err,obj,handle) =>
             # -- Send Reponse -- #
+            debug "#{process.pid}: Sending response for #{msg.id}.", handle?
             @_pending.push reply_id:msg.id, msg:obj, err:err?.message, err_stack:err?.stack, handle:handle
             @_runQueue()
 
@@ -146,6 +151,8 @@ module.exports = class RPC extends require("events").EventEmitter
             @emit "debug", "Got unmatched response for #{ msg.reply_id }. Could be a call that timed out."
             return false
 
+        debug "#{process.pid}: Handling message response for #{ msg.reply_id}.", msg, handle?
+
         # stop the timeout
         clearTimeout h.timeout
 
@@ -154,10 +161,12 @@ module.exports = class RPC extends require("events").EventEmitter
             err = new Error msg.err
             err.stack = msg.err_stack
 
+        # clean up
+        debug "#{process.pid}: Deleting callback for request #{ msg.reply_id }"
+        delete @_requests[ msg.reply_id ]
+
         h.callback? err, msg.msg, handle
 
-        # clean up
-        delete @_requests[ msg.reply_id ]
 
 
     #----------

@@ -1,4 +1,4 @@
-var RPC, UUID, _,
+var RPC, UUID, debug, _,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   __slice = [].slice;
@@ -6,6 +6,8 @@ var RPC, UUID, _,
 _ = require("underscore");
 
 UUID = require("uuid");
+
+debug = require("debug")("rpc");
 
 module.exports = RPC = (function(_super) {
   __extends(RPC, _super);
@@ -16,6 +18,7 @@ module.exports = RPC = (function(_super) {
     if (((_ref = this["interface"]) != null ? _ref.send : void 0) == null) {
       throw new Error("Invalid RPC interface. No send function.");
     }
+    debug("" + process.pid + ": Starting up RPC client/server");
     this._pending = [];
     this._requests = {};
     this._listening = true;
@@ -28,6 +31,7 @@ module.exports = RPC = (function(_super) {
     this._mListener = (function(_this) {
       return function(msg, handle) {
         if ((msg != null ? msg.type : void 0) === "_rpc") {
+          debug("" + process.pid + ": Incoming message of type _rpc", msg, handle != null);
           if (msg.reply_id) {
             return _this._response(msg, handle);
           } else {
@@ -78,6 +82,7 @@ module.exports = RPC = (function(_super) {
     var cb, d;
     cb = _.once((function(_this) {
       return function(err, obj, handle) {
+        debug("" + process.pid + ": Sending response for " + msg.id + ".", handle != null);
         _this._pending.push({
           reply_id: msg.id,
           msg: obj,
@@ -161,16 +166,16 @@ module.exports = RPC = (function(_super) {
       this.emit("debug", "Got unmatched response for " + msg.reply_id + ". Could be a call that timed out.");
       return false;
     }
+    debug("" + process.pid + ": Handling message response for " + msg.reply_id + ".", msg, handle != null);
     clearTimeout(h.timeout);
     err = void 0;
     if (msg.err) {
       err = new Error(msg.err);
       err.stack = msg.err_stack;
     }
-    if (typeof h.callback === "function") {
-      h.callback(err, msg.msg, handle);
-    }
-    return delete this._requests[msg.reply_id];
+    debug("" + process.pid + ": Deleting callback for request " + msg.reply_id);
+    delete this._requests[msg.reply_id];
+    return typeof h.callback === "function" ? h.callback(err, msg.msg, handle) : void 0;
   };
 
   return RPC;

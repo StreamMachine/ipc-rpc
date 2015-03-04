@@ -61,9 +61,11 @@ describe "Function Calls", ->
         s = net.createServer()
         s.listen 0
 
+        port = s.address().port
+
         rpc.request "handle", null, s, (err,obj) ->
             throw err if err
-            expect(obj.fd).to.eql s._handle.fd
+            expect(obj.port).to.eql port
             done()
 
     it "can return an error", (done) ->

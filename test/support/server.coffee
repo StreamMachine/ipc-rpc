@@ -30,7 +30,7 @@ functions =
         if !handle
             return cb "No handle received"
 
-        cb null, fd:handle._handle.fd
+        cb null, port:handle.address().port
 
     error: (msg,handle,cb) ->
         return cb new Error "ERROR!"
