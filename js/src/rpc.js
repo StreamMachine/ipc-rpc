@@ -80,8 +80,10 @@ module.exports = RPC = (function(_super) {
 
   RPC.prototype._consumeRequest = function(msg, handle) {
     var cb, d;
+    d = require("domain").create();
     cb = _.once((function(_this) {
       return function(err, obj, handle) {
+        d.exit();
         debug("" + process.pid + ": Sending response for " + msg.id + ".", handle != null);
         _this._pending.push({
           reply_id: msg.id,
@@ -93,9 +95,9 @@ module.exports = RPC = (function(_super) {
         return _this._runQueue();
       };
     })(this));
-    d = require("domain").create();
     d.on("error", (function(_this) {
       return function(err) {
+        debug("" + process.pid + ": Domain caught error: " + err);
         return cb(err);
       };
     })(this));
@@ -114,6 +116,7 @@ module.exports = RPC = (function(_super) {
           }
         } catch (_error) {
           err = _error;
+          debug("" + process.pid + ": Caught exception: " + err);
           return cb(err);
         }
       };

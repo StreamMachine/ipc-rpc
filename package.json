@@ -1,6 +1,6 @@
 {
     "name":         "ipc-rpc",
-    "version":      "0.1.2",
+    "version":      "0.1.3",
     "description":  "RPC over process.send",
     "keywords":     ["ipc","rpc"],
     "homepage":     "https://github.com/StreamMachine/ipc-rpc/",

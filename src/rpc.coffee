@@ -72,9 +72,14 @@ module.exports = class RPC extends require("events").EventEmitter
     #----------
 
     _consumeRequest: (msg,handle) ->
+        d = require("domain").create()
+
         # -- Set up our response function -- #
 
         cb = _.once (err,obj,handle) =>
+            # exit our domain, so that we don't swallow exceptions outside the library
+            d.exit()
+
             # -- Send Reponse -- #
             debug "#{process.pid}: Sending response for #{msg.id}.", handle?
             @_pending.push reply_id:msg.id, msg:obj, err:err?.message, err_stack:err?.stack, handle:handle
@@ -82,8 +87,9 @@ module.exports = class RPC extends require("events").EventEmitter
 
         # -- Try calling our local function -- #
 
-        d = require("domain").create()
-        d.on "error", (err) => cb err
+        d.on "error", (err) =>
+          debug "#{process.pid}: Domain caught error: #{err}"
+          cb err
 
         d.run =>
             try
@@ -106,6 +112,7 @@ module.exports = class RPC extends require("events").EventEmitter
             # TODO: Add timeout to handle case where we emit and get
             # nothing back.
             catch err
+                debug "#{process.pid}: Caught exception: #{err}"
                 cb err
 
     #----------
@@ -170,4 +177,3 @@ module.exports = class RPC extends require("events").EventEmitter
 
 
     #----------
-
